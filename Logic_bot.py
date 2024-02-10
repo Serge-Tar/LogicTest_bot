@@ -9,10 +9,23 @@ from config import TOKEN
 
 bot = telebot.TeleBot(TOKEN, parse_mode='HTML')
 
+# Функция сохранения информации о пользователе (словаре user_data) в файл json с параметрами
+def save_user_data(user_id, user_data):
+    with open(f"{user_id}_data.json", "w", encoding='utf8') as file:
+        json.dump(user_data, file, ensure_ascii=False, indent=2)
+
 # Функция сохранения информации о пользователе (словаре user_data) в файл json
 def save_user_data(user_data):
     with open("user_data.json", "w", encoding='utf8') as file:
         json.dump(user_data, file, ensure_ascii=False, indent=2)
+
+# Функция загрузки данных о пользователях из json файла в словарь user_data с параметрами
+def load_user_data(user_id):
+    try:
+        with open(f"{user_id}_data.json", "r+", encoding='utf8') as file:
+            return json.load(file)
+    except:
+        return {}
 
 # Функция загрузки данных о пользователях из json файла в словарь user_data
 def load_user_data():
@@ -76,7 +89,7 @@ def hello_message(message): # Функция для обработки сооб�
     # задаем кнопку клавиатуры "Викторина", для ее запуска
     murkup = ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
     murkup.add("Викторина")
-    murkup.add("Продолжить викторину")
+#    murkup.add("Продолжить викторину")  # Кнопка не нужна на старте
 
     #    bot.send_photo(message.chat.id, photo=open('./foto/stiсker/ginger_eyes.jpg', 'rb'))
     bot.send_message(message.chat.id, f"<strong>Привет, {message.from_user.first_name}!</strong>")  # Приветствуем пользовавтеля
@@ -121,12 +134,15 @@ def logic_test(message):
 
     if message.text.lower() == "викторина" or message.text.lower() == "попробовать ещё раз?":
         total_score = 0   # Заводим счётчик
+        user_data[chat_id]['total_score'] = str(total_score)
         user_data[chat_id]['question_number'] = 0
         send_question(chat_id)
     elif message.text.lower() == "продолжить викторину":
         user_data = load_user_data()  # загрузка всего json файла (всех пользователей)
         send_question(chat_id)        # загрузка вопроса на котором остановился пользователь
         total_score = int(user_data[chat_id]['total_score'])  # Считываем счетчик из данных пользователя
+
+
 #-------
 #--------
 #----------
@@ -138,6 +154,7 @@ def logic_test(message):
                                   f"Или нажмите /start для перехода в начало теста.")
         return
 
+    total_score = int(user_data[chat_id]['total_score'])  # Считываем счетчик из данных пользователя, на случай пропадания сети или падения сервера
     total_score += int(survey[question_number]["answers"][message.text]["score"])
     user_data[chat_id]['question_number'] = int(user_data[chat_id]['question_number']) + 1
 
